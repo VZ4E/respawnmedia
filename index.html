@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>forever v</title>
+<meta name="description" content="FOREVER V — the new album from VZ4E. Midnight.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<section class="cover" id="cover">
+  <h1 class="emboss" aria-label="forever v">forever <span class="v" id="theV">v</span></h1>
+  <div class="serial emboss" id="serial" title="">10000001</div>
+  <div class="serial-hint emboss" id="serialHint">stop counting. start listening.</div>
+  <div class="scroll-cue emboss">midnight</div>
+</section>
+
+<section class="gate" id="gate">
+  <div class="label emboss">available in</div>
+  <div class="clock emboss" id="clock" aria-live="off">— —&nbsp;— —&nbsp;— —&nbsp;— —</div>
+</section>
+
+<section class="record locked" id="record">
+  <h2 class="emboss">forever v — vz4e</h2>
+  <div id="tracks"></div>
+  <div class="player-note emboss" id="playerNote">space — play &nbsp;·&nbsp; 1–7 — tracks &nbsp;·&nbsp; ←→ — seek</div>
+  <div class="endnote emboss" id="endnote">forever means we do it again.</div>
+</section>
+
+<nav class="foot emboss">
+  <a href="store.html">the objects</a>
+  <span id="footRight">respawn media</span>
+</nav>
+
+<audio id="audio" preload="none"></audio>
+
+<script>
+/* ---------- data ---------- */
+const TRACKS = [
+  { n: 1, title: "ALL FORSEEING EYE", file: "audio/01-all-forseeing-eye.mp3", dur: "3:17" },
+  { n: 2, title: "SPINNING AROUND",   file: "audio/02-spinning-around.mp3",   dur: "4:45" },
+  { n: 3, title: "DOING IT BIG",      file: "audio/03-doing-it-big.mp3",      dur: "3:36" },
+  { n: 4, title: "DOWN LOW",          file: "audio/04-down-low.mp3",          dur: "1:07" },
+  { n: 5, title: "I KNOW",            file: "audio/05-i-know.mp3",            dur: "3:06" },
+  { n: 6, title: "SIMPLY BIDNESS",    file: "audio/06-simply-bidness.mp3",    dur: "1:38" },
+  { n: 7, title: "CHANGING TIDES",    file: "audio/07-changing-tides.mp3",    dur: "1:27" }
+];
+
+/* release: midnight tonight, local time (same as the DSPs) */
+const RELEASE = new Date(2026, 7, 28, 0, 0, 0);
+
+/* ---------- raking light ---------- */
+const root = document.documentElement;
+addEventListener("pointermove", e => {
+  const cx = innerWidth / 2, cy = innerHeight / 2;
+  const dx = (e.clientX - cx) / cx, dy = (e.clientY - cy) / cy;
+  root.style.setProperty("--hx", (-1 - dx * 1.2).toFixed(2) + "px");
+  root.style.setProperty("--hy", (-1 - dy * 1.2).toFixed(2) + "px");
+  root.style.setProperty("--sx", (1 + dx * 1.2).toFixed(2) + "px");
+  root.style.setProperty("--sy", (1 + dy * 1.2).toFixed(2) + "px");
+}, { passive: true });
+
+/* ---------- build tracklist ---------- */
+const tracksEl = document.getElementById("tracks");
+TRACKS.forEach((t, i) => {
+  const row = document.createElement("div");
+  row.className = "track emboss";
+  row.dataset.i = i;
+  row.innerHTML = `<span class="t-no">${t.n}</span><span class="t-title">${t.title}</span><span class="t-dur">${t.dur}</span><span class="bar"></span>`;
+  row.addEventListener("click", () => playTrack(i));
+  tracksEl.appendChild(row);
+});
+
+/* ---------- countdown / unlock ---------- */
+const clockEl = document.getElementById("clock");
+const gateEl = document.getElementById("gate");
+const recordEl = document.getElementById("record");
+let unlocked = false;
+
+function pad(n) { return String(n).padStart(2, "0"); }
+
+function tick() {
+  const ms = RELEASE - new Date();
+  if (ms <= 0 || sessionStorage.getItem("fv_preview") === "1") {
+    if (!unlocked) unlock();
+    return;
+  }
+  const s = Math.floor(ms / 1000);
+  const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600),
+        m = Math.floor(s % 3600 / 60), sec = s % 60;
+  clockEl.innerHTML =
+    (d > 0 ? pad(d) + '<span class="unit">d</span> ' : "") +
+    pad(h) + '<span class="unit">h</span> ' +
+    pad(m) + '<span class="unit">m</span> ' +
+    pad(sec) + '<span class="unit">s</span>';
+}
+setInterval(tick, 1000); tick();
+
+function unlock() {
+  unlocked = true;
+  gateEl.querySelector(".label").textContent = "it's time.";
+  clockEl.textContent = "00 00 00";
+  clockEl.classList.add("deboss");
+  recordEl.classList.remove("locked");
+  recordEl.classList.add("unlocked");
+  document.getElementById("playerNote").classList.add("show");
+  crackle(1.6);
+}
+
+/* ---------- player ---------- */
+const audio = document.getElementById("audio");
+let current = -1;
+
+function playTrack(i) {
+  if (!unlocked) return;
+  if (current === i) { audio.paused ? audio.play() : audio.pause(); return; }
+  current = i;
+  audio.src = TRACKS[i].file;
+  audio.play();
+  document.querySelectorAll(".track").forEach((el, j) => {
+    el.classList.toggle("playing", j === i);
+    if (j !== i) el.querySelector(".bar").style.width = "0%";
+  });
+  /* down low: the breath */
+  document.body.style.transition = "opacity 2s ease";
+  document.body.style.opacity = (i === 3) ? "0.82" : "1";
+}
+
+audio.addEventListener("timeupdate", () => {
+  if (current < 0 || !audio.duration) return;
+  const row = document.querySelectorAll(".track")[current];
+  row.querySelector(".bar").style.width = (audio.currentTime / audio.duration * 100) + "%";
+});
+
+audio.addEventListener("ended", () => {
+  if (current < TRACKS.length - 1) { playTrack(current + 1); }
+  else {
+    document.querySelectorAll(".track")[current].classList.remove("playing");
+    document.body.style.opacity = "1";
+    const end = document.getElementById("endnote");
+    end.classList.add("show");
+    end.onclick = () => { end.classList.remove("show"); playTrack(0); };
+    current = -1;
+  }
+});
+
+addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT") return;
+  if (e.code === "Space") { e.preventDefault(); current < 0 ? playTrack(0) : (audio.paused ? audio.play() : audio.pause()); }
+  if (e.key >= "1" && e.key <= "7") playTrack(+e.key - 1);
+  if (e.key === "ArrowRight" && current >= 0) audio.currentTime = Math.min(audio.currentTime + 5, audio.duration);
+  if (e.key === "ArrowLeft" && current >= 0) audio.currentTime = Math.max(audio.currentTime - 5, 0);
+});
+
+/* ---------- vinyl crackle (WebAudio, no asset) ---------- */
+let ac;
+function crackle(seconds) {
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    const len = ac.sampleRate * seconds;
+    const buf = ac.createBuffer(1, len, ac.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) {
+      data[i] = Math.random() < 0.0012 ? (Math.random() * 2 - 1) * 0.28 : (Math.random() * 2 - 1) * 0.006;
+    }
+    const srcN = ac.createBufferSource();
+    srcN.buffer = buf;
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.5, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + seconds);
+    srcN.connect(g).connect(ac.destination);
+    srcN.start();
+  } catch (_) { /* silence is fine */ }
+}
+
+/* ---------- easter eggs ---------- */
+
+/* serial: binary counter */
+const serial = document.getElementById("serial");
+let serialVal = 0b10000001, serialClicks = 0;
+serial.addEventListener("click", () => {
+  serialVal = (serialVal + 1) & 0xff;
+  serial.textContent = serialVal.toString(2).padStart(8, "0");
+  if (++serialClicks === 8) document.getElementById("serialHint").classList.add("show");
+});
+
+/* hold the v -> prodigal */
+const theV = document.getElementById("theV");
+let vTimer;
+function vDown() {
+  theV.classList.add("pressing");
+  vTimer = setTimeout(() => {
+    document.body.style.transition = "opacity 1.4s ease";
+    document.body.style.opacity = "0";
+    setTimeout(() => location.href = "prodigal.html", 1400);
+  }, 2000);
+}
+function vUp() { theV.classList.remove("pressing"); clearTimeout(vTimer); }
+theV.addEventListener("pointerdown", vDown);
+theV.addEventListener("pointerup", vUp);
+theV.addEventListener("pointerleave", vUp);
+
+/* typed words */
+let typed = "";
+addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT" || !e.key || e.key.length !== 1) return;
+  typed = (typed + e.key.toLowerCase()).slice(-12);
+  if (typed.endsWith("prodigal")) location.href = "prodigal.html";
+  if (typed.endsWith("vz4e")) {
+    sessionStorage.setItem("fv_preview", "1");
+    document.getElementById("footRight").textContent = "hello, v.";
+    tick();
+  }
+});
+
+/* konami -> worn record */
+const KONAMI = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a"];
+let kIdx = 0;
+addEventListener("keydown", e => {
+  kIdx = (e.key === KONAMI[kIdx]) ? kIdx + 1 : (e.key === KONAMI[0] ? 1 : 0);
+  if (kIdx === KONAMI.length) {
+    kIdx = 0;
+    document.body.classList.toggle("worn");
+    crackle(3);
+  }
+});
+
+/* console */
+console.log("%c\n  f o r e v e r   v\n", "font-size:24px; color:#d8d4ca; text-shadow:1px 1px 1px rgba(0,0,0,0.2);");
+console.log("%c10000001 — pressed on paper.\nhold the v.", "color:#999; font-family:monospace;");
+</script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>·</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0e0e0d;
+  height: 100vh;
+  overflow: hidden;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  cursor: none;
+}
+/* grain */
+body::before {
+  content: "";
+  position: fixed; inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0.7;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+}
+h1 {
+  position: absolute;
+  top: 55%; left: 55%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: #131312;
+  text-shadow: -1px -1px 1px rgba(255,255,255,0.06), 1px 1px 2px rgba(0,0,0,0.9);
+  user-select: none;
+  white-space: nowrap;
+}
+.serial {
+  position: absolute;
+  right: 5vw; bottom: 6vh;
+  font-family: "Courier New", Courier, monospace;
+  font-size: clamp(0.9rem, 1.6vw, 1.2rem);
+  letter-spacing: 0.14em;
+  transform: rotate(-4deg);
+  color: #131312;
+  text-shadow: -1px -1px 1px rgba(255,255,255,0.05), 1px 1px 2px rgba(0,0,0,0.9);
+  user-select: none;
+}
+.light {
+  position: fixed;
+  left: 0; top: 0;
+  width: 100vmax; height: 100vmax;
+  pointer-events: none;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at center, rgba(255, 252, 240, 0.10) 0%, rgba(255, 252, 240, 0.04) 18%, transparent 42%);
+}
+.back {
+  position: fixed;
+  left: 5vw; bottom: 6vh;
+  font-size: 0.65rem;
+  letter-spacing: 0.35em;
+  text-transform: lowercase;
+  color: #2a2a28;
+  text-decoration: none;
+  z-index: 4;
+  cursor: none;
+}
+.back:hover { color: #4a4a46; }
+.hint {
+  position: fixed;
+  left: 50%; top: 8vh;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  letter-spacing: 0.5em;
+  color: #232322;
+  text-transform: lowercase;
+  animation: fadeout 8s ease forwards;
+}
+@keyframes fadeout { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+</style>
+</head>
+<body>
+
+<div class="hint">bring light</div>
+<h1>prodigal</h1>
+<div class="serial">10000010</div>
+<div class="light" id="light"></div>
+<a class="back" href="index.html">return</a>
+
+<script>
+const light = document.getElementById("light");
+addEventListener("pointermove", e => {
+  light.style.left = e.clientX + "px";
+  light.style.top = e.clientY + "px";
+}, { passive: true });
+/* start the light center-screen so touch users see something */
+light.style.left = innerWidth * 0.55 + "px";
+light.style.top = innerHeight * 0.55 + "px";
+
+console.log("%cthe son returns. no date.", "color:#444; font-family:monospace;");
+</script>
+</body>
+</html>

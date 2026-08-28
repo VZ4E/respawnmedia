@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>forever v — the objects</title>
+<meta name="description" content="FOREVER V — vinyl waitlist and USB masters.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<main class="store">
+  <h1 class="emboss">the objects</h1>
+
+  <div class="shelf">
+
+    <!-- VINYL — waitlist only -->
+    <section class="item">
+      <div class="obj"><div class="vinyl" title="it spins"></div></section-obj></div>
+      <h2 class="emboss">forever v — vinyl</h2>
+      <p class="sub emboss">180g. blank white sleeve.<br>each one numbered by hand.<br>pressing when the list says so.</p>
+      <p class="price emboss">waitlist only</p>
+      <form class="fv-form" id="waitForm">
+        <input type="email" id="waitEmail" placeholder="email" autocomplete="email" required>
+        <button class="btn emboss" type="submit">join the waitlist</button>
+      </form>
+      <div class="msg emboss" id="waitMsg"></div>
+    </section>
+
+    <!-- USB — reserve -->
+    <section class="item">
+      <div class="obj"><div class="usb"><span class="eng emboss">10000001</span></div></div>
+      <h2 class="emboss">the masters — usb</h2>
+      <p class="sub emboss">every track. 24-bit wav.<br>plus something that didn't make it.<br>pay nothing today — reserve it.</p>
+      <p class="price emboss">$25 · at ship</p>
+      <button class="btn emboss" id="usbStart">reserve</button>
+      <form class="fv-form hidden" id="usbForm">
+        <input type="text"  id="oName"  placeholder="name" autocomplete="name" required>
+        <input type="email" id="oEmail" placeholder="email" autocomplete="email" required>
+        <input type="text"  id="oAddr1" placeholder="address" autocomplete="address-line1" required>
+        <input type="text"  id="oAddr2" placeholder="apt / unit (optional)" autocomplete="address-line2">
+        <div class="row">
+          <input type="text" id="oCity" placeholder="city" autocomplete="address-level2" required>
+          <input type="text" id="oRegion" placeholder="state" autocomplete="address-level1">
+        </div>
+        <div class="row">
+          <input type="text" id="oPostal" placeholder="zip" autocomplete="postal-code" required>
+          <input type="text" id="oCountry" placeholder="country" autocomplete="country" value="US">
+        </div>
+        <select id="oQty">
+          <option value="1">qty — 1</option><option value="2">qty — 2</option>
+          <option value="3">qty — 3</option><option value="4">qty — 4</option><option value="5">qty — 5</option>
+        </select>
+        <button class="btn emboss" type="submit">place reservation</button>
+      </form>
+      <div class="msg emboss" id="usbMsg"></div>
+    </section>
+
+  </div>
+</main>
+
+<nav class="foot emboss">
+  <a href="index.html">the record</a>
+  <span>respawn media</span>
+</nav>
+
+<script>
+/* raking light */
+const root = document.documentElement;
+addEventListener("pointermove", e => {
+  const cx = innerWidth / 2, cy = innerHeight / 2;
+  const dx = (e.clientX - cx) / cx, dy = (e.clientY - cy) / cy;
+  root.style.setProperty("--hx", (-1 - dx * 1.2).toFixed(2) + "px");
+  root.style.setProperty("--hy", (-1 - dy * 1.2).toFixed(2) + "px");
+  root.style.setProperty("--sx", (1 + dx * 1.2).toFixed(2) + "px");
+  root.style.setProperty("--sy", (1 + dy * 1.2).toFixed(2) + "px");
+}, { passive: true });
+
+/* backend */
+const SB_URL = "https://juslypttczwrdfpzkkqk.supabase.co";
+const SB_KEY = "sb_publishable_H2tvbaMT4Ouwg2CIRMqOVQ_SjLnuODH";
+
+async function rpc(fn, args) {
+  const res = await fetch(`${SB_URL}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "apikey": SB_KEY, "Authorization": `Bearer ${SB_KEY}` },
+    body: JSON.stringify(args)
+  });
+  if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || "request failed");
+  return res.json();
+}
+
+/* vinyl waitlist */
+document.getElementById("waitForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const msg = document.getElementById("waitMsg");
+  msg.textContent = "…";
+  try {
+    const pos = await rpc("fv_join_waitlist", { p_email: document.getElementById("waitEmail").value });
+    msg.textContent = `you're #${pos} in line.`;
+    e.target.classList.add("hidden");
+  } catch (err) { msg.textContent = "that didn't press right. try again."; }
+});
+
+/* usb reservation */
+document.getElementById("usbStart").addEventListener("click", e => {
+  e.target.classList.add("hidden");
+  document.getElementById("usbForm").classList.remove("hidden");
+});
+
+document.getElementById("usbForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const msg = document.getElementById("usbMsg");
+  msg.textContent = "…";
+  try {
+    const no = await rpc("fv_place_order", {
+      p_email:   document.getElementById("oEmail").value,
+      p_name:    document.getElementById("oName").value,
+      p_address1: document.getElementById("oAddr1").value,
+      p_address2: document.getElementById("oAddr2").value,
+      p_city:    document.getElementById("oCity").value,
+      p_region:  document.getElementById("oRegion").value,
+      p_postal:  document.getElementById("oPostal").value,
+      p_country: document.getElementById("oCountry").value,
+      p_qty:     +document.getElementById("oQty").value
+    });
+    msg.textContent = `reserved. ${no}. we'll email you at ship.`;
+    e.target.classList.add("hidden");
+  } catch (err) { msg.textContent = "that didn't press right. check the fields."; }
+});
+
+/* typed words still work here */
+let typed = "";
+addEventListener("keydown", e => {
+  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT" || !e.key || e.key.length !== 1) return;
+  typed = (typed + e.key.toLowerCase()).slice(-12);
+  if (typed.endsWith("prodigal")) location.href = "prodigal.html";
+});
+</script>
+</body>
+</html>
